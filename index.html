@@ -1,0 +1,554 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Agiliza Robôs</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Robôs desktop (assistentes virtuais) para restaurantes, clínicas, escritórios e qualquer negócio.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: faixas largas alternadas; herói com uma "tela de computador" onde o robô trabalha; catálogo em grade filtrável; chat flutuante. */
+:root{
+  --bg:#F2F5F3; --surface:#FFFFFF; --ink:#0F1E2E; --muted:#556575; --line:#D7DFE0;
+  --accent:#2453F0; --accent-ink:#FFFFFF; --mint:#13B596; --mint-soft:#DDF4EE; --band:#0F1E2E; --band-ink:#EAF0F4; --band-muted:#9FB0BF;
+  --screen:#16283B; --screen-line:#24394F;
+  --f-display:"Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
+  --f-body:"Figtree", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, "Consolas", monospace;
+  --r:14px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0C1621; --surface:#13212F; --ink:#E7EEF3; --muted:#9AABBA; --line:#24384A;
+  --accent:#5B80FF; --accent-ink:#0C1621; --mint:#2FD3B2; --mint-soft:#123A35; --band:#06101A; --band-ink:#E7EEF3; --band-muted:#8EA1B2;
+  --screen:#0A1520; --screen-line:#1F3346; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0C1621; --surface:#13212F; --ink:#E7EEF3; --muted:#9AABBA; --line:#24384A;
+  --accent:#5B80FF; --accent-ink:#0C1621; --mint:#2FD3B2; --mint-soft:#123A35; --band:#06101A; --band-ink:#E7EEF3; --band-muted:#8EA1B2;
+  --screen:#0A1520; --screen-line:#1F3346; color-scheme:dark}
+
+*{box-sizing:border-box}
+html,body{margin:0}
+[hidden]{display:none!important}
+img{max-width:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.6}
+h1,h2,h3{font-family:var(--f-display);line-height:1.08;margin:0;text-wrap:balance;letter-spacing:-.01em}
+h1{font-size:clamp(2.3rem,5.6vw,4rem);font-weight:800}
+h2{font-size:clamp(1.8rem,3.8vw,2.7rem);font-weight:700}
+h3{font-size:1.3rem;font-weight:700}
+p{margin:0}
+a{color:inherit}
+.wrap{max-width:1160px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+section{padding-block:clamp(56px,8vw,96px)}
+.eyebrow{font-family:var(--f-mono);font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:700}
+.lead{font-size:1.15rem;color:var(--muted);max-width:60ch}
+.btn{display:inline-flex;align-items:center;gap:.5em;font:600 1rem var(--f-body);padding:.85em 1.3em;border-radius:999px;border:2px solid transparent;cursor:pointer;text-decoration:none;transition:transform .15s, background .15s}
+.btn:hover{transform:translateY(-1px)}
+.btn:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--mint);outline-offset:2px}
+.btn-primary{background:var(--accent);color:var(--accent-ink)}
+.btn-ghost{border-color:var(--line);color:var(--ink);background:transparent}
+
+/* topo */
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:21;background:var(--bg)}
+.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-block:14px}
+.logo{display:flex;align-items:center;gap:10px;font:800 1.25rem var(--f-display);text-decoration:none}
+.logo-mark{width:34px;height:34px;border-radius:10px;background:var(--accent);display:grid;place-items:center}
+.top nav{display:flex;gap:22px;align-items:center}
+.top nav a{text-decoration:none;color:var(--muted);font-weight:600;font-size:.95rem}
+.top nav a:hover{color:var(--ink)}
+@media (max-width:780px){.top nav a.nl{display:none}}
+
+/* herói */
+.hero{padding-block:clamp(40px,6vw,80px) clamp(56px,7vw,88px)}
+.hero .wrap{display:grid;grid-template-columns:1.05fr 1fr;gap:clamp(28px,5vw,64px);align-items:center}
+.hero-copy{display:flex;flex-direction:column;gap:22px;min-width:0}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.hero .actions{display:flex;flex-wrap:wrap;gap:12px}
+.launch{display:inline-flex;align-items:center;gap:8px;align-self:flex-start;background:var(--mint-soft);color:var(--ink);border-radius:999px;padding:.35em .9em;font-size:.9rem;font-weight:600}
+.launch b{color:var(--mint)}
+.segments{display:flex;flex-wrap:wrap;gap:8px;color:var(--muted);font-size:.92rem}
+.segments span{border:1px solid var(--line);border-radius:999px;padding:.2em .75em}
+@media (max-width:860px){.hero .wrap{grid-template-columns:1fr}}
+
+/* tela de computador */
+.desk{min-width:0}
+.monitor{background:var(--screen);border-radius:16px;padding:12px;box-shadow:0 30px 60px -30px rgba(15,30,46,.55)}
+.monitor-bar{display:flex;gap:6px;padding:2px 4px 10px}
+.monitor-bar i{width:10px;height:10px;border-radius:50%;background:var(--screen-line)}
+.monitor-bar span{margin-left:auto;font:500 .72rem var(--f-mono);color:#7F95A9}
+.screen{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pane{background:#0F1F2F;border:1px solid var(--screen-line);border-radius:10px;padding:12px;color:#CFDCE6;font-size:.85rem;min-width:0}
+.pane h4{margin:0 0 8px;font:700 .7rem var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:#7F95A9}
+.task{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px dashed var(--screen-line)}
+.task:last-child{border-bottom:0}
+.task .ck{width:16px;height:16px;border-radius:5px;border:1.5px solid #3F5870;flex:none;display:grid;place-items:center}
+.task.done .ck{background:#2FD3B2;border-color:#2FD3B2}
+.task.done .ck::after{content:"";width:7px;height:4px;border:2px solid #0F1F2F;border-top:0;border-right:0;transform:rotate(-45deg) translate(1px,-1px)}
+.task.doing .ck{border-color:#5B80FF;animation:pulse 1.2s infinite}
+.task small{margin-left:auto;font-family:var(--f-mono);color:#7F95A9;font-size:.7rem}
+@keyframes pulse{50%{box-shadow:0 0 0 4px rgba(91,128,255,.25)}}
+.bubble{background:#1B3046;border-radius:10px 10px 10px 2px;padding:7px 10px;margin-bottom:8px}
+.bubble.me{background:#2453F0;color:#fff;border-radius:10px 10px 2px 10px;margin-left:18%}
+.robot-face{grid-column:1/-1;display:flex;align-items:center;gap:12px;background:#0F1F2F;border:1px solid var(--screen-line);border-radius:10px;padding:10px 12px;color:#CFDCE6;font-size:.85rem}
+.robot-face b{color:#2FD3B2;font-family:var(--f-mono);font-size:.8rem}
+.stand{width:28%;height:18px;margin:0 auto;background:linear-gradient(var(--screen),color-mix(in srgb,var(--screen) 70%,var(--bg)));clip-path:polygon(18% 0,82% 0,100% 100%,0 100%)}
+@media (max-width:480px){.screen{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){.task.doing .ck{animation:none}}
+
+/* importância */
+.why{background:var(--band);color:var(--band-ink)}
+.why .lead{color:var(--band-muted)}
+.why-head{display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:end;margin-bottom:48px}
+@media (max-width:860px){.why-head{grid-template-columns:1fr}}
+.why-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:#24394F;border:1px solid #24394F;border-radius:var(--r);overflow:hidden}
+.why-item{background:var(--band);padding:28px;display:flex;flex-direction:column;gap:10px}
+.why-item .ic{width:42px;height:42px;border-radius:12px;background:rgba(47,211,178,.14);display:grid;place-items:center;color:#2FD3B2}
+.why-item p{color:var(--band-muted);font-size:.98rem}
+@media (max-width:860px){.why-grid{grid-template-columns:1fr 1fr}}
+@media (max-width:560px){.why-grid{grid-template-columns:1fr}}
+
+/* calculadora */
+.calc{margin-top:48px;display:grid;grid-template-columns:1.2fr 1fr;gap:28px;background:#14293D;border-radius:var(--r);padding:clamp(22px,4vw,36px)}
+@media (max-width:860px){.calc{grid-template-columns:1fr}}
+.calc label{display:flex;flex-direction:column;gap:6px;font-size:.92rem;color:var(--band-muted)}
+.calc .row{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.calc output{font:700 1rem var(--f-mono);color:var(--band-ink)}
+.calc input[type=range]{width:100%;accent-color:#2FD3B2}
+.calc-fields{display:flex;flex-direction:column;gap:20px;min-width:0}
+.calc-result{display:flex;flex-direction:column;justify-content:center;gap:8px;border-left:1px solid #24394F;padding-left:28px;min-width:0}
+@media (max-width:860px){.calc-result{border-left:0;padding-left:0;border-top:1px solid #24394F;padding-top:22px}}
+.big{font:800 clamp(2.2rem,5vw,3.2rem) var(--f-display);color:#2FD3B2;font-variant-numeric:tabular-nums;line-height:1}
+.calc-result small{color:var(--band-muted);font-size:.85rem}
+
+/* catálogo */
+.cat-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:end;gap:24px;margin-bottom:32px}
+.cat-head > div{display:flex;flex-direction:column;gap:12px;min-width:0}
+.filters{display:flex;flex-wrap:wrap;gap:8px}
+.filters button{font:600 .92rem var(--f-body);padding:.5em 1em;border-radius:999px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.filters button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+@media (max-width:980px){.grid{grid-template-columns:1fr 1fr}}
+@media (max-width:620px){.grid{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:24px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.bot{width:52px;height:52px;border-radius:14px;display:grid;place-items:center;flex:none}
+.code{font:700 .72rem var(--f-mono);color:var(--muted);letter-spacing:.06em}
+.card p.desc{color:var(--muted);font-size:.97rem}
+.card ul{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:7px;font-size:.95rem}
+.card li{display:flex;gap:9px;align-items:flex-start}
+.card li::before{content:"";flex:none;width:7px;height:7px;margin-top:.55em;border-radius:2px;background:var(--mint)}
+.gain{font-size:.88rem;background:var(--mint-soft);border-radius:10px;padding:8px 12px}
+.gain b{font-family:var(--f-mono)}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.tags span{font-size:.78rem;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:.1em .6em}
+.price-row{margin-top:auto;display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding-top:14px;border-top:1px solid var(--line);flex-wrap:wrap}
+.price s{color:var(--muted);font-size:.85rem;font-family:var(--f-mono)}
+.price strong{display:block;font:800 1.9rem var(--f-display);font-variant-numeric:tabular-nums;line-height:1.05}
+.price strong small{font:500 .9rem var(--f-body);color:var(--muted)}
+.card .btn{padding:.65em 1.05em;font-size:.95rem}
+.card.featured{border:2px solid var(--accent)}
+.notes{margin-top:24px;display:flex;flex-wrap:wrap;gap:10px 24px;color:var(--muted);font-size:.92rem}
+.notes span::before{content:"✓ ";color:var(--mint);font-weight:700}
+
+/* como funciona */
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-top:36px;counter-reset:s}
+@media (max-width:860px){.steps{grid-template-columns:1fr 1fr}}
+@media (max-width:520px){.steps{grid-template-columns:1fr}}
+.step{display:flex;flex-direction:column;gap:8px;padding-top:16px;border-top:3px solid var(--ink)}
+.step::before{counter-increment:s;content:"Passo " counter(s);font:700 .75rem var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+.step p{color:var(--muted);font-size:.97rem}
+
+/* faq */
+.faq{display:grid;grid-template-columns:1fr 1.4fr;gap:40px}
+@media (max-width:860px){.faq{grid-template-columns:1fr}}
+details{border-bottom:1px solid var(--line);padding-block:16px}
+summary{cursor:pointer;font-weight:700;font-size:1.05rem;list-style:none;display:flex;justify-content:space-between;gap:16px}
+summary::after{content:"+";font-family:var(--f-mono);color:var(--accent)}
+details[open] summary::after{content:"–"}
+details p{color:var(--muted);margin-top:10px}
+
+/* chamada final */
+.cta{background:var(--accent);color:var(--accent-ink);border-radius:20px;padding:clamp(28px,5vw,56px);display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:24px}
+.cta p{opacity:.9;max-width:52ch;margin-top:10px}
+.cta .btn{background:var(--accent-ink);color:var(--accent)}
+footer{padding-block:32px;color:var(--muted);font-size:.9rem;border-top:1px solid var(--line)}
+footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px}
+
+/* chat */
+.chat-fab{position:fixed;right:calc(20px + env(safe-area-inset-right,0px));bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:40;display:flex;align-items:center;gap:10px;background:var(--ink);color:var(--bg);border:0;border-radius:999px;padding:12px 18px 12px 12px;font:700 .98rem var(--f-body);cursor:pointer;box-shadow:0 14px 30px -12px rgba(0,0,0,.45)}
+.chat-fab .dot{width:34px;height:34px;border-radius:50%;background:var(--accent);display:grid;place-items:center}
+.chat{position:fixed;right:calc(20px + env(safe-area-inset-right,0px));bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:50;width:min(400px,calc(100vw - 32px));height:min(620px,calc(100vh - 40px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)));background:var(--surface);border:1px solid var(--line);border-radius:18px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 30px 60px -20px rgba(0,0,0,.45)}
+@media (max-width:480px){.chat{right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px))}}
+.chat-head{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--ink);color:var(--bg)}
+.chat-head b{display:block;font-family:var(--f-display);font-size:1.05rem}
+.chat-head small{opacity:.75;font-size:.8rem}
+.chat-head button{margin-left:auto;background:transparent;border:0;color:inherit;font-size:1.5rem;cursor:pointer;line-height:1;padding:4px 8px}
+.chat-log{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;background:var(--bg)}
+.msg{max-width:86%;padding:10px 13px;border-radius:14px;font-size:.95rem;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere}
+.msg.bot-m{background:var(--surface);border:1px solid var(--line);border-bottom-left-radius:4px;align-self:flex-start}
+.msg.user-m{background:var(--accent);color:var(--accent-ink);border-bottom-right-radius:4px;align-self:flex-end}
+.chips{display:flex;flex-wrap:wrap;gap:6px;align-self:flex-start}
+.chips button{font:600 .85rem var(--f-body);border:1.5px solid var(--accent);color:var(--accent);background:var(--surface);border-radius:999px;padding:.35em .8em;cursor:pointer}
+.chips button.on{background:var(--accent);color:var(--accent-ink)}
+.summary{align-self:stretch;background:var(--surface);border:1px dashed var(--accent);border-radius:12px;padding:12px;font:500 .8rem/1.5 var(--f-mono);white-space:pre-wrap;overflow-wrap:anywhere}
+.send-box{display:flex;flex-direction:column;gap:8px;align-self:stretch}
+.send-box .btn{justify-content:center;padding:.7em 1em;font-size:.95rem}
+.send-box p{font-size:.8rem;color:var(--muted)}
+.chat-form{display:flex;gap:8px;padding:12px;border-top:1px solid var(--line);background:var(--surface)}
+.chat-form textarea{flex:1;resize:none;font:inherit;font-size:.95rem;border:1.5px solid var(--line);border-radius:12px;padding:9px 12px;background:var(--bg);color:var(--ink);min-height:44px;max-height:120px}
+.chat-form button{border:0;background:var(--accent);color:var(--accent-ink);border-radius:12px;padding:0 16px;font:700 .95rem var(--f-body);cursor:pointer}
+.chat-form button:disabled{opacity:.45;cursor:default}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="logo" href="#inicio" aria-label="Agiliza Robôs, início">
+      <span class="logo-mark" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><rect x="4" y="7" width="16" height="12" rx="4"/><path d="M12 3v4"/><circle cx="9.5" cy="13" r="1.2" fill="#fff"/><circle cx="14.5" cy="13" r="1.2" fill="#fff"/></svg></span>
+      Agiliza Robôs
+    </a>
+    <nav>
+      <a class="nl" href="#por-que">Por que ter</a>
+      <a class="nl" href="#robos">Robôs e preços</a>
+      <a class="nl" href="#como-funciona">Como funciona</a>
+      <button class="btn btn-primary" type="button" data-open-chat style="padding:.55em 1.05em;font-size:.92rem">Montar meu robô</button>
+    </nav>
+  </div>
+</header>
+
+<main id="inicio">
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-copy">
+      <span class="launch"><b>●</b> Preços de lançamento com instalação grátis</span>
+      <h1>Um robô no seu computador que faz o trabalho <em>repetitivo</em> por você.</h1>
+      <p class="lead">Nossos robôs desktop atendem clientes, marcam horários, preenchem planilhas e organizam documentos enquanto a sua equipe cuida do que só gente sabe fazer.</p>
+      <div class="actions">
+        <a class="btn btn-primary" href="#robos">Ver robôs e preços</a>
+        <button class="btn btn-ghost" type="button" data-open-chat>Contar como quero o meu</button>
+      </div>
+      <div class="segments" aria-label="Para quem é"><span>Restaurantes</span><span>Clínicas</span><span>Escritórios</span><span>Lojas</span><span>Qualquer negócio</span></div>
+    </div>
+    <div class="desk" aria-hidden="true">
+      <div class="monitor">
+        <div class="monitor-bar"><i></i><i></i><i></i><span>robô-atende · rodando</span></div>
+        <div class="screen">
+          <div class="pane">
+            <h4>WhatsApp do restaurante</h4>
+            <div class="bubble">Boa noite! Tem mesa pra 4 às 20h?</div>
+            <div class="bubble me">Tenho sim! Reservei a mesa 7 no nome de Carla, às 20h. Quer ver o cardápio?</div>
+            <div class="bubble">Quero 😋</div>
+          </div>
+          <div class="pane">
+            <h4>Tarefas de hoje</h4>
+            <div class="task done"><span class="ck"></span>Reserva mesa 7<small>19:42</small></div>
+            <div class="task done"><span class="ck"></span>Pedido #318 na cozinha<small>19:44</small></div>
+            <div class="task done"><span class="ck"></span>Planilha de caixa<small>19:45</small></div>
+            <div class="task doing"><span class="ck"></span>Enviando cardápio<small>agora</small></div>
+          </div>
+          <div class="robot-face"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#2FD3B2" stroke-width="2" stroke-linecap="round"><rect x="4" y="7" width="16" height="12" rx="4"/><path d="M12 3v4"/><circle cx="9.5" cy="13" r="1.2" fill="#2FD3B2"/><circle cx="14.5" cy="13" r="1.2" fill="#2FD3B2"/></svg><span>Hoje: <b>47 tarefas</b> feitas sem ninguém parar o que estava fazendo.</span></div>
+        </div>
+      </div>
+      <div class="stand"></div>
+    </div>
+  </div>
+</section>
+
+<section class="why" id="por-que">
+  <div class="wrap">
+    <div class="why-head">
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <span class="eyebrow" style="color:#2FD3B2">A importância de um assistente virtual</span>
+        <h2>Seu negócio não precisa de mais correria. Precisa de alguém que nunca esquece nada.</h2>
+      </div>
+      <p class="lead">Responder a mesma pergunta 30 vezes, copiar dados de um lugar pro outro, confirmar horário um por um. Essas tarefas tomam horas do dia e são justamente as que um robô faz melhor: rápido, sem erro de digitação e a qualquer hora.</p>
+    </div>
+    <div class="why-grid">
+      <div class="why-item"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><h3>Atende 24 horas</h3><p>Cliente que manda mensagem às 23h recebe resposta na hora, e o pedido ou o horário já fica registrado.</p></div>
+      <div class="why-item"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 12l5 5L20 6"/></svg></span><h3>Menos erros</h3><p>Nada de número trocado na planilha ou recado perdido. O robô segue o passo a passo do jeito que você ensinou.</p></div>
+      <div class="why-item"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></span><h3>Mais vendas</h3><p>Quem responde primeiro fecha primeiro. Clientes não ficam esperando e desistindo no meio da conversa.</p></div>
+      <div class="why-item"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 4.5a3 3 0 010 7M21 20c0-2.6-1.6-4.8-4-5.6"/></svg></span><h3>Equipe livre</h3><p>Seu time para de fazer trabalho de copiar e colar e passa a cuidar do cliente, da cozinha ou do paciente.</p></div>
+      <div class="why-item"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v20M17 6H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></span><h3>Custa menos que um turno</h3><p>Um robô custa por mês menos do que algumas horas extras e não tira férias, não falta e não cansa.</p></div>
+      <div class="why-item"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 15v-3M12 15V9M17 15v-5"/></svg></span><h3>Tudo registrado</h3><p>Cada atendimento, pedido e agendamento fica salvo. No fim do dia você vê um relatório pronto.</p></div>
+    </div>
+
+    <div class="calc" aria-labelledby="calc-title">
+      <div class="calc-fields">
+        <h3 id="calc-title" style="color:var(--band-ink)">Quanto tempo o robô devolve pra você?</h3>
+        <label for="c-horas"><span class="row">Horas por dia em tarefas repetitivas <output id="o-horas">2 h</output></span><input id="c-horas" type="range" min="0.5" max="8" step="0.5" value="2"></label>
+        <label for="c-valor"><span class="row">Quanto custa uma hora de trabalho da equipe <output id="o-valor">R$ 15</output></span><input id="c-valor" type="range" min="8" max="80" step="1" value="15"></label>
+        <label for="c-dias"><span class="row">Dias de trabalho por mês <output id="o-dias">22 dias</output></span><input id="c-dias" type="range" min="10" max="30" step="1" value="22"></label>
+      </div>
+      <div class="calc-result" aria-live="polite">
+        <small>Horas devolvidas por mês</small>
+        <div class="big" id="r-horas">44 h</div>
+        <small style="margin-top:12px">Valor desse tempo por mês</small>
+        <div class="big" id="r-valor" style="font-size:clamp(1.6rem,3.6vw,2.2rem)">R$ 660</div>
+        <small id="r-comp">Um robô a partir de R$ 89/mês. Conta simples: horas × valor da hora × dias.</small>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="robos">
+  <div class="wrap">
+    <div class="cat-head">
+      <div>
+        <span class="eyebrow">Robôs e preços</span>
+        <h2>Escolha o robô que combina com o seu dia a dia.</h2>
+        <p class="lead">Preços de lançamento, por mês, sem fidelidade. Cada robô já vem configurado para a sua área e pode ser ajustado ao seu jeito de trabalhar.</p>
+      </div>
+      <div class="filters" role="group" aria-label="Filtrar por área">
+        <button type="button" data-f="todos" aria-pressed="true">Todos</button>
+        <button type="button" data-f="restaurante" aria-pressed="false">Restaurantes</button>
+        <button type="button" data-f="clinica" aria-pressed="false">Clínicas</button>
+        <button type="button" data-f="admin" aria-pressed="false">Administrativo</button>
+      </div>
+    </div>
+    <div class="grid" id="grid"></div>
+    <div class="notes"><span>Instalação e configuração grátis no lançamento</span><span>7 dias de teste</span><span>Suporte por WhatsApp</span><span>Cancele quando quiser</span></div>
+  </div>
+</section>
+
+<section id="como-funciona" style="padding-top:0">
+  <div class="wrap">
+    <span class="eyebrow">Como funciona</span>
+    <h2 style="margin-top:12px">Do primeiro papo ao robô trabalhando.</h2>
+    <div class="steps">
+      <div class="step"><h3>Você conta</h3><p>Abra o chat e descreva o que toma o seu tempo e como gostaria que o robô fizesse.</p></div>
+      <div class="step"><h3>A gente monta</h3><p>Configuramos o robô com o seu cardápio, sua agenda, suas planilhas e o seu jeito de falar.</p></div>
+      <div class="step"><h3>Instalamos</h3><p>O robô roda no computador do seu negócio. Instalação remota e treinamento rápido da equipe.</p></div>
+      <div class="step"><h3>Ele trabalha</h3><p>Você acompanha o relatório do dia e pede ajustes quando quiser, sem custo extra.</p></div>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap faq">
+    <div><span class="eyebrow">Dúvidas</span><h2 style="margin-top:12px">Perguntas frequentes</h2></div>
+    <div>
+      <details><summary>O que é um robô desktop?</summary><p>É um programa instalado no computador do seu negócio que trabalha sozinho: lê mensagens, preenche sistemas e planilhas, envia lembretes e organiza arquivos, como um assistente que nunca sai da mesa.</p></details>
+      <details><summary>Preciso entender de tecnologia?</summary><p>Não. Nós instalamos, configuramos e ensinamos. Você só precisa dizer como quer que as coisas sejam feitas.</p></details>
+      <details><summary>Funciona com os programas que já uso?</summary><p>Na maioria dos casos, sim: WhatsApp, Excel, Google Planilhas, e-mail, sistemas de agenda e de caixa. Conte no chat quais você usa e confirmamos.</p></details>
+      <details><summary>E se eu quiser algo diferente dos robôs da lista?</summary><p>Esse é o Robô Sob Medida. Descreva no chat o que você precisa e montamos um robô só para o seu negócio.</p></details>
+      <details><summary>Por que o preço está tão baixo?</summary><p>Estamos começando e queremos os primeiros clientes conosco. Quem contratar agora mantém o preço de lançamento.</p></details>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <div class="cta">
+      <div><h2>Conte como você quer o seu robô.</h2><p>Leva dois minutinhos. Você descreve o que precisa e a gente responde com a proposta.</p></div>
+      <button class="btn" type="button" data-open-chat>Abrir o chat</button>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer><div class="wrap"><span>© 2026 Agiliza Robôs · Assistentes virtuais para o seu negócio</span><span>Preços de lançamento sujeitos a alteração.</span></div></footer>
+
+<button class="chat-fab" type="button" id="fab" data-open-chat aria-label="Abrir chat para montar seu robô"><span class="dot"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><path d="M21 12a8 8 0 01-11.6 7.1L4 20l1-4.6A8 8 0 1121 12z"/></svg></span>Monte seu robô</button>
+
+<div class="chat" id="chat" role="dialog" aria-label="Chat: monte seu robô" hidden>
+  <div class="chat-head">
+    <span class="logo-mark" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><rect x="4" y="7" width="16" height="12" rx="4"/><path d="M12 3v4"/><circle cx="9.5" cy="13" r="1.2" fill="#fff"/><circle cx="14.5" cy="13" r="1.2" fill="#fff"/></svg></span>
+    <div><b>Monte seu robô</b><small>Conte como você quer que ele trabalhe</small></div>
+    <button type="button" id="chat-close" aria-label="Fechar chat">×</button>
+  </div>
+  <div class="chat-log" id="log" aria-live="polite"></div>
+  <form class="chat-form" id="chat-form">
+    <textarea id="chat-input" rows="1" placeholder="Escreva aqui…" aria-label="Sua mensagem"></textarea>
+    <button type="submit" id="chat-send">Enviar</button>
+  </form>
+</div>
+
+<script>
+/* ===== CONFIGURAÇÃO: troque pelos seus contatos ===== */
+const CONTATO = {
+  whatsapp: "5511995444341",           // DDI + DDD + número, só dígitos. Ex.: 5511999998888
+  email: "paloma20120@hotmail.com"
+};
+
+const ROBOS = [
+  {id:"atende", nome:"Robô Atende", codigo:"RB-01", areas:["restaurante"], cor:"#F26B3A",
+   desc:"Atende o WhatsApp do restaurante, anota pedidos e reservas e manda tudo pra cozinha.",
+   itens:["Responde dúvidas e envia o cardápio","Anota pedidos de delivery e retirada","Faz e confirma reservas de mesa","Avisa o cliente quando o pedido sai"],
+   ganho:"Atende vários clientes ao mesmo tempo, inclusive no horário de pico.", de:197, por:97, tags:["WhatsApp","Cardápio","Delivery"]},
+  {id:"agenda", nome:"Robô Agenda", codigo:"RB-02", areas:["clinica"], cor:"#13B596", destaque:true,
+   desc:"Marca, confirma e remarca consultas sozinho, e diminui as faltas com lembretes.",
+   itens:["Agenda consultas pelo WhatsApp","Confirma presença um dia antes","Remarca e libera horários vagos","Envia orientações de preparo"],
+   ganho:"Menos faltas e a recepção livre para receber os pacientes.", de:247, por:127, tags:["Agenda","Lembretes","Recepção"]},
+  {id:"escritorio", nome:"Robô Escritório", codigo:"RB-03", areas:["admin"], cor:"#2453F0",
+   desc:"Faz o trabalho de copiar, colar e conferir: planilhas, sistemas, e-mails e documentos.",
+   itens:["Lança dados em planilhas e sistemas","Organiza e renomeia arquivos e PDFs","Responde e encaminha e-mails padrão","Gera relatórios diários e semanais"],
+   ganho:"Horas de digitação viram minutos, sem erro de número trocado.", de:297, por:147, tags:["Excel","E-mail","Documentos"]},
+  {id:"financeiro", nome:"Robô Financeiro", codigo:"RB-04", areas:["admin","restaurante","clinica"], cor:"#8A5CF6",
+   desc:"Cuida das cobranças e do controle de contas, avisando antes de qualquer vencimento.",
+   itens:["Envia cobranças e lembretes de pagamento","Confere pagamentos recebidos","Avisa contas a pagar do dia","Monta o fechamento de caixa"],
+   ganho:"Menos inadimplência e nenhum boleto esquecido.", de:227, por:117, tags:["Cobrança","Caixa","Contas"]},
+  {id:"estoque", nome:"Robô Estoque", codigo:"RB-05", areas:["restaurante","admin"], cor:"#E0A21B",
+   desc:"Controla entradas e saídas e avisa quando é hora de repor, antes de faltar.",
+   itens:["Atualiza o estoque a cada venda","Alerta produtos acabando","Monta a lista de compras","Mostra o que está parado ou vencendo"],
+   ganho:"Nada de descobrir que acabou o ingrediente no meio do serviço.", de:177, por:89, tags:["Estoque","Compras","Alertas"]},
+  {id:"recepcao", nome:"Robô Recepção", codigo:"RB-06", areas:["clinica","admin"], cor:"#E2457A",
+   desc:"Faz o cadastro e o pré-atendimento: coleta dados, documentos e tira as dúvidas mais comuns.",
+   itens:["Cadastra clientes e pacientes","Recebe fotos de documentos e carteirinhas","Responde perguntas frequentes","Faz pesquisa de satisfação"],
+   ganho:"O atendimento já começa com a ficha pronta.", de:197, por:107, tags:["Cadastro","Atendimento","Pesquisa"]},
+  {id:"medida", nome:"Robô Sob Medida", codigo:"RB-07", areas:["restaurante","clinica","admin"], cor:"#0F1E2E", medida:true,
+   desc:"Não achou o robô ideal? Montamos um do zero, do jeito que o seu negócio funciona.",
+   itens:["Você descreve a tarefa no chat","Desenhamos o passo a passo com você","Juntamos funções de vários robôs","Ajustes inclusos nos primeiros 30 dias"],
+   ganho:"Implantação a partir de R$ 297, cobrada uma vez.", de:null, por:197, tags:["Personalizado","Qualquer área"]},
+  {id:"combo", nome:"Pacote Negócio Completo", codigo:"RB-PACK", areas:["restaurante","clinica","admin"], cor:"#13B596", combo:true,
+   desc:"Três robôs à sua escolha trabalhando juntos, com um relatório único no fim do dia.",
+   itens:["Escolha 3 robôs da lista","Um painel com tudo o que eles fizeram","Prioridade no suporte","Economia de mais de 25%"],
+   ganho:"Ideal para quem quer automatizar atendimento e escritório de uma vez.", de:349, por:249, tags:["3 robôs","Melhor custo"]}
+];
+
+const fmt = n => "R$ " + n.toLocaleString("pt-BR");
+const botIcon = c => `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><rect x="4" y="7" width="16" height="12" rx="4"/><path d="M12 3v4"/><circle cx="9.5" cy="13" r="1.2" fill="#fff"/><circle cx="14.5" cy="13" r="1.2" fill="#fff"/></svg>`;
+const areaNome = {restaurante:"Restaurantes", clinica:"Clínicas", admin:"Administrativo"};
+
+function renderGrid(filtro){
+  const g = document.getElementById("grid");
+  g.innerHTML = ROBOS.filter(r => filtro==="todos" || r.areas.includes(filtro)).map(r => `
+    <article class="card${r.destaque?" featured":""}">
+      <div class="card-top">
+        <span class="bot" style="background:${r.cor}">${botIcon()}</span>
+        <span class="code">${r.codigo}${r.destaque?" · MAIS PEDIDO":""}</span>
+      </div>
+      <h3>${r.nome}</h3>
+      <p class="desc">${r.desc}</p>
+      <ul>${r.itens.map(i=>`<li>${i}</li>`).join("")}</ul>
+      <div class="gain">${r.ganho}</div>
+      <div class="tags">${r.tags.map(t=>`<span>${t}</span>`).join("")}</div>
+      <div class="price-row">
+        <div class="price">${r.de?`<s>${fmt(r.de)}</s>`:`<s style="text-decoration:none">a partir de</s>`}<strong>${fmt(r.por)}<small>/mês</small></strong></div>
+        <button class="btn btn-primary" type="button" data-quero="${r.id}">Quero este</button>
+      </div>
+    </article>`).join("");
+}
+renderGrid("todos");
+document.querySelectorAll(".filters button").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll(".filters button").forEach(x => x.setAttribute("aria-pressed", x===b?"true":"false"));
+  renderGrid(b.dataset.f);
+}));
+
+/* calculadora */
+const ch = document.getElementById("c-horas"), cv = document.getElementById("c-valor"), cd = document.getElementById("c-dias");
+function calc(){
+  const h=+ch.value, v=+cv.value, d=+cd.value;
+  document.getElementById("o-horas").textContent = h.toLocaleString("pt-BR")+" h";
+  document.getElementById("o-valor").textContent = fmt(v);
+  document.getElementById("o-dias").textContent = d+" dias";
+  const horas = h*d, valor = Math.round(horas*v);
+  document.getElementById("r-horas").textContent = horas.toLocaleString("pt-BR")+" h";
+  document.getElementById("r-valor").textContent = fmt(valor);
+}
+[ch,cv,cd].forEach(i=>i.addEventListener("input",calc)); calc();
+
+/* ===== chat ===== */
+const chat = document.getElementById("chat"), fab = document.getElementById("fab"), log = document.getElementById("log");
+const form = document.getElementById("chat-form"), input = document.getElementById("chat-input");
+const PASSOS = [
+  {campo:"nome", pergunta:"Oi! Eu sou o assistente da Agiliza Robôs. Vou te fazer umas perguntas rápidas pra entender como você quer o seu robô.\n\nPra começar, qual é o seu nome?"},
+  {campo:"negocio", pergunta:"Prazer, {nome}! Qual é o seu tipo de negócio?", chips:["Restaurante","Clínica","Escritório","Loja","Outro"]},
+  {campo:"tarefas", pergunta:"Agora a parte mais importante: me conta, com as suas palavras, o que você quer que o robô faça. Pode descrever o passo a passo, como você explicaria pra um funcionário novo.", dica:"Ex.: quando um cliente mandar mensagem pedindo horário, ver a agenda, oferecer 3 opções e confirmar no dia anterior."},
+  {campo:"programas", pergunta:"Quais programas ou ferramentas você usa hoje? Pode marcar mais de um e depois tocar em Continuar.", chips:["WhatsApp","Excel","Google Planilhas","E-mail","Sistema próprio","Instagram"], multi:true},
+  {campo:"volume", pergunta:"Mais ou menos quantos atendimentos ou tarefas dessas acontecem por dia?", chips:["Até 20","20 a 50","50 a 150","Mais de 150"]},
+  {campo:"contato", pergunta:"Pra gente te mandar a proposta, qual o seu WhatsApp ou e-mail?"}
+];
+let estado = {passo:0, dados:{}, robo:null, iniciado:false};
+try { const s = JSON.parse(localStorage.getItem("agiliza-chat")||"null"); if (s && s.dados) estado = s; } catch(e){}
+const salvar = () => { try { localStorage.setItem("agiliza-chat", JSON.stringify(estado)); } catch(e){} };
+
+function addMsg(texto, quem){ const d=document.createElement("div"); d.className="msg "+(quem==="eu"?"user-m":"bot-m"); d.textContent=texto; log.appendChild(d); log.scrollTop=log.scrollHeight; return d; }
+function limparChips(){ log.querySelectorAll(".chips").forEach(c=>c.remove()); }
+
+function perguntar(){
+  const p = PASSOS[estado.passo];
+  if (!p) return finalizar();
+  addMsg(p.pergunta.replace("{nome}", (estado.dados.nome||"").split(" ")[0]), "bot");
+  if (p.dica) addMsg(p.dica, "bot").style.opacity=".75";
+  if (p.chips){
+    const box=document.createElement("div"); box.className="chips"; const marcados=new Set();
+    p.chips.forEach(c=>{ const b=document.createElement("button"); b.type="button"; b.textContent=c;
+      b.onclick=()=>{ if(p.multi){ marcados.has(c)?marcados.delete(c):marcados.add(c); b.classList.toggle("on"); } else responder(c); };
+      box.appendChild(b); });
+    if (p.multi){ const ok=document.createElement("button"); ok.type="button"; ok.textContent="Continuar →"; ok.style.borderStyle="dashed";
+      ok.onclick=()=>responder(marcados.size?[...marcados].join(", "):"Não sei / outro"); box.appendChild(ok); }
+    log.appendChild(box); log.scrollTop=log.scrollHeight;
+  }
+  input.focus();
+}
+function responder(txt){
+  txt = String(txt).trim(); if(!txt) return;
+  const p = PASSOS[estado.passo]; if(!p) { addMsg(txt,"eu"); estado.dados.extra = ((estado.dados.extra||"")+"\n"+txt).trim(); salvar(); addMsg("Anotei! Isso vai junto no resumo. Toque em enviar abaixo quando quiser.","bot"); renderResumo(); return; }
+  limparChips(); addMsg(txt,"eu");
+  estado.dados[p.campo]=txt; estado.passo++; salvar();
+  setTimeout(perguntar, 350);
+}
+function resumoTexto(){
+  const d=estado.dados;
+  return [
+    "*Novo pedido de robô – Agiliza Robôs*",
+    estado.robo ? "Robô de interesse: "+estado.robo : null,
+    "Nome: "+(d.nome||"-"),
+    "Negócio: "+(d.negocio||"-"),
+    "Como quero que o robô funcione: "+(d.tarefas||"-"),
+    "Programas que uso: "+(d.programas||"-"),
+    "Volume por dia: "+(d.volume||"-"),
+    "Contato: "+(d.contato||"-"),
+    d.extra ? "Observações: "+d.extra : null
+  ].filter(Boolean).join("\n");
+}
+function renderResumo(){
+  log.querySelectorAll(".summary,.send-box").forEach(e=>e.remove());
+  const t = resumoTexto();
+  const pre=document.createElement("div"); pre.className="summary"; pre.textContent=t; log.appendChild(pre);
+  const box=document.createElement("div"); box.className="send-box";
+  const wa=document.createElement("a"); wa.className="btn btn-primary"; wa.target="_blank"; wa.rel="noopener";
+  wa.href="https://wa.me/"+CONTATO.whatsapp+"?text="+encodeURIComponent(t); wa.textContent="Enviar pelo WhatsApp";
+  const em=document.createElement("a"); em.className="btn btn-ghost";
+  em.href="mailto:"+CONTATO.email+"?subject="+encodeURIComponent("Quero um robô – "+(estado.dados.nome||""))+"&body="+encodeURIComponent(t.replace(/\*/g,""));
+  em.textContent="Enviar por e-mail";
+  const cp=document.createElement("button"); cp.type="button"; cp.className="btn btn-ghost"; cp.textContent="Copiar resumo";
+  cp.onclick=()=>{ const ok=()=>{cp.textContent="Resumo copiado";};
+    if(navigator.clipboard) navigator.clipboard.writeText(t).then(ok,()=>selecionar(pre)); else selecionar(pre); };
+  const novo=document.createElement("button"); novo.type="button"; novo.className="btn btn-ghost"; novo.textContent="Começar de novo";
+  novo.onclick=()=>{ estado={passo:0,dados:{},robo:null,iniciado:true}; salvar(); log.innerHTML=""; perguntar(); };
+  const nota=document.createElement("p"); nota.innerHTML="Se o botão não abrir, copie o resumo e mande para "+CONTATO.email+" ou WhatsApp +"+CONTATO.whatsapp+".";
+  box.append(wa,em,cp,novo,nota); log.appendChild(box); log.scrollTop=log.scrollHeight;
+}
+function selecionar(el){ const r=document.createRange(); r.selectNodeContents(el); const s=getSelection(); s.removeAllRanges(); s.addRange(r); }
+function finalizar(){
+  addMsg("Perfeito, "+((estado.dados.nome||"").split(" ")[0]||"tudo certo")+"! Montei o resumo do seu robô. É só enviar pra gente que respondemos com a proposta. Se quiser acrescentar algo, escreva abaixo.","bot");
+  renderResumo();
+}
+function reconstruir(){
+  log.innerHTML="";
+  if (estado.robo) addMsg("Você se interessou pelo "+estado.robo+".","bot");
+  PASSOS.slice(0,estado.passo).forEach(p=>{ addMsg(p.pergunta.replace("{nome}",(estado.dados.nome||"").split(" ")[0]),"bot"); addMsg(estado.dados[p.campo],"eu"); });
+  perguntar();
+}
+function abrir(robo){
+  chat.hidden=false; fab.hidden=true;
+  if (robo && robo!==estado.robo){ estado.robo=robo; salvar(); if(estado.iniciado){ addMsg("Ótimo, anotei que você quer o "+robo+".","bot"); if(estado.passo>=PASSOS.length) renderResumo(); } }
+  if (!estado.iniciado){ estado.iniciado=true; salvar(); if(robo) addMsg("Boa escolha! Vamos ajustar o "+robo+" ao seu negócio.","bot"); perguntar(); }
+  else if (!log.children.length) reconstruir();
+  input.focus();
+}
+document.addEventListener("click", e=>{
+  const q=e.target.closest("[data-quero]"); if(q){ abrir(ROBOS.find(r=>r.id===q.dataset.quero).nome); return; }
+  if (e.target.closest("[data-open-chat]")) abrir();
+});
+document.getElementById("chat-close").onclick=()=>{ chat.hidden=true; fab.hidden=false; fab.focus(); };
+form.addEventListener("submit", e=>{ e.preventDefault(); const t=input.value; input.value=""; responder(t); });
+input.addEventListener("keydown", e=>{ if(e.key==="Enter" && !e.shiftKey){ e.preventDefault(); form.requestSubmit(); } });
+</script>
+</body>
+</html>
